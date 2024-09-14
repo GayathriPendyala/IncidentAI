@@ -34,6 +34,7 @@ app.listen(PORT, () => {
 });
 
 app.get("/api/getResources", async (req, res) => {
+  let txt = "hello";
   res.send(txt);
 });
 app.post("/api/login", async (req, res) => {
