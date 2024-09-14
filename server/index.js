@@ -176,6 +176,30 @@ async function main() {
     console.error("Failed to connect to MongoDB:", e);
   }
 }
+async function getLocation(email) {
+  await client.connect();
+  console.log("Connected to MongoDB");
+
+  // Access the database and collection
+  const database = client.db("incidentAI");
+  const volunteersCollection = database.collection("admin");
+  try {
+    // Fetch all incidents from the Incident collection
+    const details = await volunteersCollection
+      .find(
+        { email: String(email) },
+        { projection: { city: 1, zipcode: 1, _id: 0 } }
+      )
+      .toArray();
+
+    // Send the incidents as a JSON response
+    console.log(details);
+  } catch (error) {
+    console.log("Error fetching details:", error);
+  }
+}
+
+getLocation("khavin@vt.edu");
 
 // Call the main function to run the server
 main().catch(console.error);
