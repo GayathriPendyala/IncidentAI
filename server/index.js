@@ -78,10 +78,17 @@ async function main() {
     const volunteersCollection = database.collection("volunteer"); // Replace with your collection name
 
     // Define routes after the client has connected
-    app.get("/api/getResources", async (req, res) => {
+    app.get("/api/getResources/:zipcode", async (req, res) => {
       try {
+
+        const { zipcode } = req.params;
+
+        if (!zipcode) {
+          return res.status(400).json({ error: "Zipcode is required" });
+        }
         // Define the query to find available volunteers
-        const query = { incidentID: { $in: [null, ""] } };
+        const query = { incidentID: { $in: [null, ""] } , 
+        zipcode, };
     
         // Updated pipeline to group by rId
         const pipeline = [
