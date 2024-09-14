@@ -1,4 +1,3 @@
-import { useLocation } from "wouter";
 import { Dashboard } from "./Dashboard";
 import {
   withAuthInfo,
@@ -9,12 +8,9 @@ import "./App.css";
 
 const App = withAuthInfo((props) => {
   const logoutFunction = useLogoutFunction();
-  const { redirectToLoginPage, redirectToSignupPage, redirectToAccountPage } =
-    useRedirectFunctions();
+  const { redirectToLoginPage, redirectToSignupPage } = useRedirectFunctions();
 
   if (props.isLoggedIn) {
-    const [location, navigate] = useLocation();
-
     return (
       <>
         <header>
