@@ -1,7 +1,6 @@
-import mysql2 from "mysql2";
 import express from "express";
 import cors from "cors";
-import cookieParser from "cookie-parser";
+import { MongoClient, ServerApiVersion } from "mongodb";
 
 // DB connection string
 const uri =
@@ -18,7 +17,6 @@ const client = new MongoClient(uri, {
 
 const app = express();
 app.use(express.json());
-app.use(cookieParser());
 
 // Set cors configuration
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
@@ -27,10 +25,6 @@ const PORT = 8067;
 // Start the server
 app.listen(PORT, () => {
   console.log(`SERVER : http://localhost:${PORT}`);
-  connection.connect((err) => {
-    if (err) throw err;
-    console.log("DATABASE CONNECTION SUCCESFUL");
-  });
 });
 
 app.get("/api/getResources", async (req, res) => {
