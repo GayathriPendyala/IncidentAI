@@ -1,4 +1,5 @@
 import express from "express";
+import axios from "axios";
 import cors from "cors";
 import { MongoClient, ServerApiVersion } from "mongodb";
 
@@ -65,12 +66,20 @@ async function main() {
 
     app.post("/api/creatingIncident", async (req, res) => {
       try {
-        const { incidentText, name, phoneNumber, address } = req.body;
+        const { incidentText, name, phoneNumber, lat, lng } = req.body;
 
         // Validate that incidentText is provided
         if (!incidentText) {
           return res.status(400).json({ error: "Incident text is required." });
         }
+        // Validate that latitude and longitude are provided
+        if (!lat || !lng) {
+          return res.status(400).json({
+            error: "Latitude and longitude are required for geolocation.",
+          });
+        }
+        // Fetch the address using reverse geocoding
+        const address = await getReverseGeocoding(lat, lng);
 
         // Construct the new incident object
         const newIncident = {
@@ -199,7 +208,21 @@ async function getLocation(email) {
   }
 }
 
-getLocation("khavin@vt.edu");
+//getLocation("khavin@vt.edu");
 
+const GOOGLE_API_KEY = "AIzaSyC8uLemQ5JGXg-MsfgXp1mUgrAwSkhL9lY";
+
+// Function to get address from lat/lng
+async function getReverseGeocoding(lat, lng) {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`;
+  try {
+    const response = await axios.get(url);
+    const address = response.data.results[0]?.formatted_address || null;
+    return address;
+  } catch (error) {
+    console.error("Error fetching reverse geocoding:", error);
+    throw error;
+  }
+}
 // Call the main function to run the server
 main().catch(console.error);
