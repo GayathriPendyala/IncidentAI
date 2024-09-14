@@ -110,7 +110,38 @@ async function main() {
         res.status(500).json({ error: error.message });
       }
     });
-
+    
+    app.post("/api/creatingIncident", async (req, res) => {
+      try {
+        const { incidentText, name, phoneNumber, address } = req.body;
+    
+        // Validate that incidentText is provided
+        if (!incidentText) {
+          return res.status(400).json({ error: "Incident text is required." });
+        }
+    
+        // Construct the new incident object
+        const newIncident = {
+          incidentText,           // Mandatory field
+          name,                   // Optional
+          phoneNumber,            // Optional
+          address,                // Optional
+          datetime: new Date()    // Auto-generated current datetime
+        };
+    
+        // Insert the new incident into the Incident collection
+        const result = await client.db("incidentAI").collection("Incident").insertOne(newIncident);
+    
+        // Return the success response with the auto-generated _id
+        res.status(201).json({
+          message: "Incident created successfully",
+          incidentId: result.insertedId  // Return MongoDB's auto-generated _id
+        });
+      } catch (error) {
+        console.error("Error creating incident:", error);
+        res.status(500).json({ error: "An error occurred while creating the incident." });
+      }
+    });
     // Other routes
     app.post("/api/login", async (req, res) => {
       const body = req.body;
