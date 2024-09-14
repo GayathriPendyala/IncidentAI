@@ -110,7 +110,7 @@ async function main() {
         res.status(500).json({ error: error.message });
       }
     });
-    
+
     app.post("/api/creatingIncident", async (req, res) => {
       try {
         const { incidentText, name, phoneNumber, address } = req.body;
@@ -148,9 +148,17 @@ async function main() {
       // Implement login logic
     });
 
-    app.get("/api/resourceRequests/:locName", async (req, res) => {
-      let locId = req.params.locName;
-      // Implement resource request handling
+    app.get("/api/listIncidents", async (req, res) => {
+      try {
+        // Fetch all incidents from the Incident collection
+        const incidents = await client.db("incidentAI").collection("Incident").find({}).toArray();
+    
+        // Send the incidents as a JSON response
+        res.status(200).json(incidents);
+      } catch (error) {
+        console.error("Error fetching incidents:", error);
+        res.status(500).json({ error: "An error occurred while fetching the incidents." });
+      }
     });
 
     // Start the server
