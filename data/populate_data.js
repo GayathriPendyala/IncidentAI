@@ -353,6 +353,7 @@ function createVolunteer(id) {
     passwordHash: "test",
     salt: "test",
     role: "volunteer",
+    incidentID: "",
   };
 }
 
