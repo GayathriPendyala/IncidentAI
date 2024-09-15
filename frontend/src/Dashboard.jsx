@@ -13,6 +13,7 @@ import {
   Button,
   Badge,
 } from "@radix-ui/themes";
+
 export function Dashboard() {
   return (
     <div>
@@ -47,6 +48,8 @@ function DashboardHome() {
         Authorization: `Bearer ${authInfo.accessToken}`,
       },
     });
+
+    window.location.reload();
   };
 
   useEffect(() => {
