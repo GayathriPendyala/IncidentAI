@@ -4,6 +4,8 @@ import cors from "cors";
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { run } from "./gemini_api.js";
 
+import dotenv from "dotenv";
+dotenv.config();
 
 // DB connection string
 const uri =
@@ -66,10 +68,10 @@ async function main() {
       }
     });
 
-    app.post("/api/creatingIncident", async (req, res) => { 
+    app.post("/api/creatingIncident", async (req, res) => {
       try {
         const { incidentText, name, phoneNumber, lat, lng } = req.body;
-
+        const allocated = false;
         // Validate that incidentText is provided
         if (!incidentText) {
           return res.status(400).json({ error: "Incident text is required." });
@@ -93,6 +95,7 @@ async function main() {
           address, // Optional
           datetime: new Date(), // Auto-generated current datetime
           aiResult,
+          allocated,
         };
 
         // Insert the new incident into the Incident collection
@@ -100,8 +103,6 @@ async function main() {
           .db("incidentAI")
           .collection("Incident")
           .insertOne(newIncident);
-        
-        
 
         // Return the success response with the auto-generated _id
         res.status(201).json({
@@ -148,6 +149,7 @@ async function main() {
         // Initialize MongoDB client and collection
         const database = await client.db("incidentAI");
         const volunteersCollection = await database.collection("volunteer");
+        const incidentCollection = await database.collection("Incident");
 
         // Process each rId
         for (const [rId, count] of Object.entries(req.body.resources)) {
@@ -176,9 +178,20 @@ async function main() {
             );
           }
         }
+        const incident = await incidentCollection
+          .find({ incidentID: String(newIncidentID) })
+          .toArray();
+        if (incident.length > 0) {
+          await incidentCollection.updateMany(
+            { incidentID: String(newIncidentID) },
+            { $set: { allocated: true } }
+          );
+        }
 
         // Send response
-        res.status(200).json({ message: "Resources updated successfully" });
+        res.status(200).json({
+          message: "Resources updated successfully and incident status updated",
+        });
       } catch (error) {
         console.error("Error processing request:", error);
         res.status(500).json({ error: error.message });
@@ -218,11 +231,13 @@ async function getLocation(email) {
 
 //getLocation("khavin@vt.edu");
 
-const GOOGLE_API_KEY = "AIzaSyC8uLemQ5JGXg-MsfgXp1mUgrAwSkhL9lY";
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
+//process.env.GOOGLE_API_KEY;
 // Function to get address from lat/lng
 async function getReverseGeocoding(lat, lng) {
   const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`;
+  console.log(url);
   try {
     const response = await axios.get(url);
     const address = response.data.results[0]?.formatted_address || null;
@@ -232,5 +247,6 @@ async function getReverseGeocoding(lat, lng) {
     throw error;
   }
 }
+//getReverseGeocoding(37.245441, -80.419952);
 // Call the main function to run the server
 main().catch(console.error);
