@@ -12,7 +12,9 @@ import {
   Heading,
   Button,
   Badge,
+  Separator,
 } from "@radix-ui/themes";
+import ReactHtmlParser from "react-html-parser";
 
 export function Dashboard() {
   return (
@@ -74,7 +76,7 @@ function DashboardHome() {
     }).then(async (response) => {
       const data = await response.json();
       console.log(data);
-      setIncidents(data);
+      setIncidents(data.reverse());
       setIncidentsLoading(false);
     });
   }, []);
@@ -84,24 +86,31 @@ function DashboardHome() {
   if (!isResourcesLoading) {
     const resourceElements = [];
 
-    Object.entries(resources).forEach((resourceCount) => {
+    Object.keys(RESOURCE_MAPPING).forEach((resourceId) => {
+      let resourceCount = 0;
+      if (resourceId in resources) resourceCount = resources[resourceId];
+
+      let backgroundColor = "#EC5D5E";
+      if (resourceCount < 5 && resourceCount > 0) backgroundColor = "#FFFF57";
+      if (resourceCount >= 5) backgroundColor = "#71D083";
+
       resourceElements.push(
         <Flex gap="3" justify="center">
           <Box width="350px">
-            <Card size="1">
+            <Card size="1" style={{ backgroundColor: backgroundColor }}>
               <Flex gap="3" align="center">
                 <Avatar
-                  size="3"
+                  size="4"
                   radius="full"
-                  fallback={RESOURCE_MAPPING[resourceCount[0]]?.["avatar"]}
+                  fallback={RESOURCE_MAPPING[resourceId]?.["avatar"]}
                   color="indigo"
                 />
                 <Box>
                   <Text as="div" size="2" weight="bold">
-                    {RESOURCE_MAPPING[resourceCount[0]]?.["name"] ?? "General"}
+                    {RESOURCE_MAPPING[resourceId]?.["name"] ?? "General"}
                   </Text>
                   <Text as="div" size="2" color="gray">
-                    {resourceCount[1]}
+                    {resourceCount}
                   </Text>
                 </Box>
               </Flex>
@@ -112,7 +121,7 @@ function DashboardHome() {
     });
 
     response.push(
-      <Box maxWidth="100%">
+      <Box maxWidth="100%" style={{ marginTop: "3rem" }}>
         <Card>
           <Text as="div" size="7" weight="bold" style={{ margin: "2rem" }}>
             Resources available for you at Blacksburg
@@ -146,7 +155,7 @@ function DashboardHome() {
     response.push(
       <Box maxWidth="100%" style={{ marginTop: "5rem" }}>
         <Card>
-          <Heading as="h1" weight="bold" style={{ margin: "2rem" }}>
+          <Heading size="7" weight="bold" style={{ margin: "2rem" }}>
             Ongoing Incidents
           </Heading>
           <Flex direction="column" style={{ margin: "2rem" }}>
@@ -163,7 +172,30 @@ function DashboardHome() {
 function GetIncElement({ data, resources, allocateResource }) {
   const eventTime = new Date(data.datetime).toString();
   const [allocateResources, setAllocateResource] = useState(false);
-  console.log(data);
+
+  let aiResult = "Recommendation not available";
+  if ("aiResult" in data) {
+    aiResult = data?.aiResult.replace(/\*{2}(.*?)\*{2}/g, "<b>$1</b>");
+    aiResult = <div>{ReactHtmlParser(aiResult)}</div>;
+  }
+
+  let imagePath = null;
+  if (data.imagePath !== null) {
+    let slash = "/";
+
+    if (data.imagePath.indexOf("/") == -1) {
+      slash = "\\";
+    }
+
+    imagePath = data.imagePath.split(slash + "uploads")[1];
+    imagePath = imagePath.replaceAll("\\", "");
+    imagePath = imagePath.replaceAll("/", "");
+
+    imagePath = "/uploads/" + imagePath;
+
+    console.log(imagePath);
+  }
+
   return (
     <div style={{ marginBottom: "3rem" }}>
       <Heading as="h2" weight="bold">
@@ -177,6 +209,15 @@ function GetIncElement({ data, resources, allocateResource }) {
         {eventTime}
       </Text>
       <Text>{data.incidentText}</Text>
+      <div>
+        {imagePath !== null && (
+          <img
+            style={{ margin: "1rem 0", height: "20rem" }}
+            src={"http://localhost:8067" + imagePath}
+          />
+        )}
+      </div>
+
       <Heading
         as="h5"
         size="4"
@@ -184,7 +225,16 @@ function GetIncElement({ data, resources, allocateResource }) {
       >
         AI Dispatch recommendation
       </Heading>
-      <Text>{data?.aiResult ?? "Recommendation not available"}</Text>
+      <Text
+        as="div"
+        style={{
+          backgroundColor: "#ECD9FA",
+          padding: "1rem",
+          borderRadius: "0.5rem",
+        }}
+      >
+        {aiResult}
+      </Text>
       <Heading
         as="h5"
         size="4"
@@ -222,6 +272,7 @@ function GetIncElement({ data, resources, allocateResource }) {
           incId={data["_id"]}
         ></DisplayResourceAllocateForm>
       )}
+      <Separator style={{ marginTop: "3rem" }} size="4" />
     </div>
   );
 }

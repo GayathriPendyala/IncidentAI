@@ -143,7 +143,7 @@ async function main() {
             name,
             phoneNumber,
             streetAddress,
-            image: req.file.filename,
+            image: req?.file?.filename,
             imagePath,
             datetime: new Date(),
             aiResult,
