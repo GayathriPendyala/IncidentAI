@@ -11,6 +11,7 @@ import {
   Grid,
   Heading,
   Button,
+  Badge,
 } from "@radix-ui/themes";
 export function Dashboard() {
   return (
@@ -32,6 +33,21 @@ function DashboardHome() {
 
   const [resources, setResources] = useState([]);
   const [incidents, setIncidents] = useState([]);
+
+  const allocateResource = async (resourcesToAllocate, zipcode, incId) => {
+    const response = await fetch("http://localhost:8067/api/assignResources", {
+      method: "POST",
+      body: JSON.stringify({
+        resources: resourcesToAllocate,
+        zipcode: zipcode,
+        incidentID: incId,
+      }),
+      headers: {
+        "Content-type": "application/json; charset=UTF-8",
+        Authorization: `Bearer ${authInfo.accessToken}`,
+      },
+    });
+  };
 
   useEffect(() => {
     fetch("http://localhost:8067/api/getResources/24060", {
@@ -111,11 +127,16 @@ function DashboardHome() {
     );
   }
 
-  if (!isIncidentsLoading) {
+  if (!isResourcesLoading && !isIncidentsLoading) {
     const incidentElements = [];
     incidents.forEach((incident) => {
-      console.log(incident);
-      const incidentElement = getIncElement(incident);
+      const incidentElement = (
+        <GetIncElement
+          data={incident}
+          resources={resources}
+          allocateResource={allocateResource}
+        ></GetIncElement>
+      );
       incidentElements.push(incidentElement);
     });
 
@@ -136,12 +157,14 @@ function DashboardHome() {
   return <div>{...response}</div>;
 }
 
-function getIncElement(data) {
+function GetIncElement({ data, resources, allocateResource }) {
   const eventTime = new Date(data.datetime).toString();
+  const [allocateResources, setAllocateResource] = useState(false);
+  console.log(data);
   return (
     <div style={{ marginBottom: "3rem" }}>
       <Heading as="h2" weight="bold">
-        Incident at {data.address}
+        Incident at {data.streetAddress}
       </Heading>
       <Text
         as="div"
@@ -180,10 +203,73 @@ function getIncElement(data) {
           Allocated
         </Button>
       ) : (
-        <Button color="crimson" variant="soft">
+        <Button
+          color="crimson"
+          variant="soft"
+          onClick={() => setAllocateResource(true)}
+        >
           Allocate Resource Now
         </Button>
       )}
+
+      {allocateResources && (
+        <DisplayResourceAllocateForm
+          resources={resources}
+          allocateResource={allocateResource}
+          incId={data["_id"]}
+        ></DisplayResourceAllocateForm>
+      )}
     </div>
+  );
+}
+
+function DisplayResourceAllocateForm({ resources, allocateResource, incId }) {
+  console.log(resources);
+
+  const allocate = {};
+  const formElements = Object.keys(RESOURCE_MAPPING).map((resourceId) => {
+    return (
+      <>
+        <label style={{ width: "max-content" }}>
+          <span style={{ minWidth: "17rem", display: "inline-block" }}>
+            {RESOURCE_MAPPING[resourceId]["name"]}:&nbsp;
+          </span>
+          <input
+            type="number"
+            radius="none"
+            placeholder={RESOURCE_MAPPING[resourceId]["name"]}
+            disabled={resources[resourceId] === 0}
+            onChange={(e) => (allocate[resourceId] = e.target.value)}
+            style={{
+              display: "inline-block",
+              padding: "0.5rem",
+              width: "15rem",
+            }}
+          />
+          &nbsp;&nbsp;/&nbsp;&nbsp;
+          <Badge color="indigo" style={{ fontSize: "1rem" }}>
+            {resources[resourceId] ?? 0}
+          </Badge>
+        </label>
+      </>
+    );
+  });
+
+  return (
+    <Flex
+      direction="column"
+      gap="3"
+      maxWidth="250px"
+      style={{ margin: "1rem" }}
+    >
+      {...formElements}
+      <Button
+        color="indigo"
+        variant="soft"
+        onClick={() => allocateResource(allocate, "24060", incId)}
+      >
+        Allocate
+      </Button>
+    </Flex>
   );
 }
