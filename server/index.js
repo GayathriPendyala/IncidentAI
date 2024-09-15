@@ -7,7 +7,7 @@ import fs from "fs";
 import.meta.url;
 
 import { fileURLToPath } from "url";
-import { MongoClient, ServerApiVersion } from "mongodb";
+import { MongoClient, ServerApiVersion, ObjectId } from "mongodb";
 import { run } from "./gemini_api.js";
 
 import dotenv from "dotenv";
@@ -220,7 +220,7 @@ async function main() {
                 { rId: rId },
               ],
             })
-            .limit(count)
+            .limit(parseInt(count))
             .toArray();
 
           // If there are documents to update, perform the update
@@ -236,11 +236,12 @@ async function main() {
           }
         }
         const incident = await incidentCollection
-          .find({ incidentID: String(newIncidentID) })
+          .find({ _id: new ObjectId(String(newIncidentID)) })
           .toArray();
+
         if (incident.length > 0) {
           await incidentCollection.updateMany(
-            { _id: String(newIncidentID) },
+            { _id: new ObjectId(String(newIncidentID)) },
             { $set: { allocated: true } }
           );
         }

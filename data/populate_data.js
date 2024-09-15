@@ -1,5 +1,5 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
-const { faker } = require("@faker-js/faker");
+import { MongoClient, ServerApiVersion, ObjectId } from "mongodb";
+import { faker } from "@faker-js/faker";
 
 // DB connection string
 const uri =
