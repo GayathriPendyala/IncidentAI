@@ -1,47 +1,5 @@
-// import express from "express";
-// import cors from "cors";
-// import { MongoClient, ServerApiVersion } from "mongodb";
-
-// // DB connection string
-// const uri =
-//   "mongodb+srv://admin:f8jkTV44DGVj0C2j@cluster0.mep41.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-
-// // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   },
-// });
-
-// const app = express();
-// app.use(express.json());
-
-// // Set cors configuration
-// app.use(cors({ origin: ["http://localhost:3000"], credentials: true }));
-
-// const PORT = 8067;
-// // Start the server
-// app.listen(PORT, () => {
-//   console.log(`SERVER : http://localhost:${PORT}`);
-// });
-
-// app.get("/api/getResources", async (req, res) => {
-//   let txt = "hello";
-//   res.send(txt);
-// });
-// app.post("/api/login", async (req, res) => {
-//   const body = req.body;
-// });
-
-// app.get("/api/resourceRequests/:locName", async (req, res) => {
-//   let locId = req.params.locName;
-// });
-
-// server.js or index.js
-
 import express from "express";
+import axios from "axios";
 import cors from "cors";
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { run } from "./gemini_api.js";
@@ -110,12 +68,20 @@ async function main() {
 
     app.post("/api/creatingIncident", async (req, res) => { 
       try {
-        const { incidentText, name, phoneNumber, address } = req.body;
+        const { incidentText, name, phoneNumber, lat, lng } = req.body;
 
         // Validate that incidentText is provided
         if (!incidentText) {
           return res.status(400).json({ error: "Incident text is required." });
         }
+        // Validate that latitude and longitude are provided
+        if (!lat || !lng) {
+          return res.status(400).json({
+            error: "Latitude and longitude are required for geolocation.",
+          });
+        }
+        // Fetch the address using reverse geocoding
+        const address = await getReverseGeocoding(lat, lng);
 
         const aiResult = await run(incidentText);
 
@@ -227,6 +193,44 @@ async function main() {
     console.error("Failed to connect to MongoDB:", e);
   }
 }
+async function getLocation(email) {
+  await client.connect();
+  console.log("Connected to MongoDB");
 
+  // Access the database and collection
+  const database = client.db("incidentAI");
+  const volunteersCollection = database.collection("admin");
+  try {
+    // Fetch all incidents from the Incident collection
+    const details = await volunteersCollection
+      .find(
+        { email: String(email) },
+        { projection: { city: 1, zipcode: 1, _id: 0 } }
+      )
+      .toArray();
+
+    // Send the incidents as a JSON response
+    console.log(details);
+  } catch (error) {
+    console.log("Error fetching details:", error);
+  }
+}
+
+//getLocation("khavin@vt.edu");
+
+const GOOGLE_API_KEY = "AIzaSyC8uLemQ5JGXg-MsfgXp1mUgrAwSkhL9lY";
+
+// Function to get address from lat/lng
+async function getReverseGeocoding(lat, lng) {
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`;
+  try {
+    const response = await axios.get(url);
+    const address = response.data.results[0]?.formatted_address || null;
+    return address;
+  } catch (error) {
+    console.error("Error fetching reverse geocoding:", error);
+    throw error;
+  }
+}
 // Call the main function to run the server
 main().catch(console.error);
