@@ -4,6 +4,7 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { initAuth } from "@propelauth/express";
 import.meta.url;
 
 import { fileURLToPath } from "url";
@@ -26,6 +27,15 @@ const client = new MongoClient(uri, {
     strict: true,
     deprecationErrors: true,
   },
+});
+
+const {
+  requireUser,
+  fetchUserMetadataByUserId,
+  // ...
+} = initAuth({
+  authUrl: "https://8445988.propelauthtest.com",
+  apiKey: "",
 });
 
 const app = express();
@@ -63,7 +73,7 @@ async function main() {
     const volunteersCollection = database.collection("volunteer"); // Replace with your collection name
 
     // Define routes after the client has connected
-    app.get("/api/getResources/:zipcode", async (req, res) => {
+    app.get("/api/getResources/:zipcode", requireUser, async (req, res) => {
       try {
         const { zipcode } = req.params;
 
@@ -173,14 +183,14 @@ async function main() {
     );
 
     // Serve static files from the "uploads" directory
-    app.use("/uploads", express.static(uploadDir));
+    app.use("/uploads", requireUser, express.static(uploadDir));
     // Other routes
     app.post("/api/login", async (req, res) => {
       const body = req.body;
       // Implement login logic
     });
 
-    app.get("/api/listIncidents", async (req, res) => {
+    app.get("/api/listIncidents", requireUser, async (req, res) => {
       try {
         // Fetch all incidents from the Incident collection
         const incidents = await client
@@ -198,7 +208,7 @@ async function main() {
           .json({ error: "An error occurred while fetching the incidents." });
       }
     });
-    app.post("/api/assignResources", async (req, res) => {
+    app.post("/api/assignResources", requireUser, async (req, res) => {
       const zipcode = req.body.zipcode;
       const newIncidentID = req.body.incidentID;
 

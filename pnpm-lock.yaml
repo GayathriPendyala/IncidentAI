@@ -14,6 +14,9 @@ importers:
       '@google/generative-ai':
         specifier: ^0.19.0
         version: 0.19.0
+      '@propelauth/express':
+        specifier: ^2.1.22
+        version: 2.1.22
       axios:
         specifier: ^1.7.7
         version: 1.7.7
@@ -45,6 +48,15 @@ packages:
 
   '@mongodb-js/saslprep@1.1.9':
     resolution: {integrity: sha512-tVkljjeEaAhCqTzajSdgbQ6gE6f3oneVwa3iXR6csiEwXXOFsiC6Uh9iAjAhXPtqa/XMDHWjjeNH/77m/Yq2dw==}
+
+  '@propelauth/express@2.1.22':
+    resolution: {integrity: sha512-scSC4zsREs09bFZOpwwJDIVOENqCojOKVt3FbSEh0igAqhNH2isJzr/T+zaj7yx77rTWBEEGohRbG7qz5+HyWg==}
+
+  '@propelauth/node-apis@2.1.21':
+    resolution: {integrity: sha512-YFZiHjG8MpJ6IIOXC88RTk4HYsGrjA8zLOqSpuCdZuHCX2HrkQX8JduXM2oAsFzBvCQbxquNbhEpxYRx7dCKJg==}
+
+  '@propelauth/node@2.1.22':
+    resolution: {integrity: sha512-EbseAp88+LyPatDW/QF74hpxX7tV4+UUkNQS3BkBGBJIPFObQlBRtOtCFSHdwawIUfwkyVbi/SLfJQ5nFGur9w==}
 
   '@types/webidl-conversions@7.0.3':
     resolution: {integrity: sha512-CiJJvcRtIgzadHCYXw7dqEnMNRjhGZlYK05Mj9OyktqV8uVT8fD2BFOB7S1uwBE3Kj2Z+4UyPmFw/Ixgw/LAlA==}
@@ -246,6 +258,9 @@ packages:
 
   isarray@1.0.0:
     resolution: {integrity: sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==}
+
+  jose@5.9.2:
+    resolution: {integrity: sha512-ILI2xx/I57b20sd7rHZvgiiQrmp2mcotwsAH+5ajbpFQbrYVQdNHYlQhoA5cFb78CgtBOxtC05TeA+mcgkuCqQ==}
 
   media-typer@0.3.0:
     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
@@ -466,6 +481,17 @@ snapshots:
   '@mongodb-js/saslprep@1.1.9':
     dependencies:
       sparse-bitfield: 3.0.3
+
+  '@propelauth/express@2.1.22':
+    dependencies:
+      '@propelauth/node': 2.1.22
+
+  '@propelauth/node-apis@2.1.21': {}
+
+  '@propelauth/node@2.1.22':
+    dependencies:
+      '@propelauth/node-apis': 2.1.21
+      jose: 5.9.2
 
   '@types/webidl-conversions@7.0.3': {}
 
@@ -692,6 +718,8 @@ snapshots:
   ipaddr.js@1.9.1: {}
 
   isarray@1.0.0: {}
+
+  jose@5.9.2: {}
 
   media-typer@0.3.0: {}
 
