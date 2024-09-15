@@ -1,12 +1,20 @@
 import express from "express";
 import axios from "axios";
 import cors from "cors";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import.meta.url;
+
+import { fileURLToPath } from 'url';
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { run } from "./gemini_api.js";
 
 import dotenv from "dotenv";
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 // DB connection string
 const uri =
   "mongodb+srv://admin:f8jkTV44DGVj0C2j@cluster0.mep41.mongodb.net/volunteerDB?retryWrites=true&w=majority&appName=Cluster0";
@@ -25,6 +33,25 @@ app.use(express.json());
 
 // Set cors configuration
 app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
+const uploadDir = path.join(__dirname, 'uploads');
+
+
+// Ensure the upload directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
 
 async function main() {
   try {
@@ -68,10 +95,28 @@ async function main() {
       }
     });
 
-    app.post("/api/creatingIncident", async (req, res) => {
+    app.post("/api/creatingIncident", upload.single('image'), async (req, res) => {
       try {
         const { incidentText, name, phoneNumber, lat, lng } = req.body;
         const allocated = false;
+        
+        // Log the request body and file
+        console.log("Request body:", req.body);
+        console.log("Uploaded file:", req.file);
+
+        // Check if a file was uploaded
+        if (!req.file) {
+          console.log("No file was uploaded");
+        }
+
+        // If an image is uploaded, get the file path
+        const imageName = req.file.filename;
+        const imagePath = req.file ? req.file.path : null;
+        //const relativeImagePath = 'uploads/' + imageName;
+        if (imagePath) {
+          console.log("Image saved at:", imagePath);
+        }
+
         // Validate that incidentText is provided
         if (!incidentText) {
           return res.status(400).json({ error: "Incident text is required." });
@@ -83,40 +128,40 @@ async function main() {
           });
         }
         // Fetch the address using reverse geocoding
-        const address = await getReverseGeocoding(lat, lng);
+        const streetAddress = await getReverseGeocoding(lat, lng);
 
         const aiResult = await run(incidentText);
 
         // Construct the new incident object
         const newIncident = {
-          incidentText, // Mandatory field
-          name, // Optional
-          phoneNumber, // Optional
-          address, // Optional
-          datetime: new Date(), // Auto-generated current datetime
+          incidentText,
+          name,
+          phoneNumber,
+          streetAddress,
+          image: req.file.filename,
+          imagePath, 
+          datetime: new Date(),
           aiResult,
-          allocated,
+          allocated
         };
 
-        // Insert the new incident into the Incident collection
-        const result = await client
-          .db("incidentAI")
-          .collection("Incident")
-          .insertOne(newIncident);
+        const result = await database.collection("Incident").insertOne(newIncident);
 
         // Return the success response with the auto-generated _id
         res.status(201).json({
           message: "Incident created successfully",
           incidentId: result.insertedId, // Return MongoDB's auto-generated _id
           aiRecommendation: aiResult,
+          image: imagePath ? `http://localhost:8067/uploads/${path.basename(imagePath)}` : null
         });
       } catch (error) {
         console.error("Error creating incident:", error);
-        res
-          .status(500)
-          .json({ error: "An error occurred while creating the incident." });
+        res.status(500).json({ error: "An error occurred while creating the incident." });
       }
     });
+
+    // Serve static files from the "uploads" directory
+    app.use('/uploads', express.static(uploadDir));
     // Other routes
     app.post("/api/login", async (req, res) => {
       const body = req.body;
