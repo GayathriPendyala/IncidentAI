@@ -6,7 +6,7 @@ import path from "path";
 import fs from "fs";
 import.meta.url;
 
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 import { MongoClient, ServerApiVersion } from "mongodb";
 import { run } from "./gemini_api.js";
 
@@ -33,8 +33,7 @@ app.use(express.json());
 
 // Set cors configuration
 app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
-const uploadDir = path.join(__dirname, 'uploads');
-
+const uploadDir = path.join(__dirname, "uploads");
 
 // Ensure the upload directory exists
 if (!fs.existsSync(uploadDir)) {
@@ -48,7 +47,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     cb(null, Date.now() + path.extname(file.originalname));
-  }
+  },
 });
 
 const upload = multer({ storage });
@@ -95,74 +94,86 @@ async function main() {
       }
     });
 
-    app.post("/api/creatingIncident", upload.single('image'), async (req, res) => {
-      try {
-        const { incidentText, name, phoneNumber, lat, lng } = req.body;
-        const allocated = false;
-        
-        // Log the request body and file
-        console.log("Request body:", req.body);
-        console.log("Uploaded file:", req.file);
+    app.post(
+      "/api/creatingIncident",
+      upload.single("image"),
+      async (req, res) => {
+        try {
+          const { incidentText, name, phoneNumber, lat, lng } = req.body;
+          const allocated = false;
 
-        // Check if a file was uploaded
-        if (!req.file) {
-          console.log("No file was uploaded");
-        }
+          // Log the request body and file
+          console.log("Request body:", req.body);
+          console.log("Uploaded file:", req.file);
 
-        // If an image is uploaded, get the file path
-        // const imageName = req.file.filename;
-        const imagePath = req.file ? req.file.path : null;
-        const imageBase64 = imagePath ? fs.readFileSync(imagePath, { encoding: 'base64' }) : null;
-        //const relativeImagePath = 'uploads/' + imageName;
-        if (imagePath) {
-          console.log("Image saved at:", imagePath);
-        }
+          // Check if a file was uploaded
+          if (!req.file) {
+            console.log("No file was uploaded");
+          }
 
-        // Validate that incidentText is provided
-        // if (!incidentText) {
-        //   return res.status(400).json({ error: "Incident text is required." });
-        // }
-        // Validate that latitude and longitude are provided
-        if (!lat || !lng) {
-          return res.status(400).json({
-            error: "Latitude and longitude are required for geolocation.",
+          // If an image is uploaded, get the file path
+          // const imageName = req.file.filename;
+          const imagePath = req.file ? req.file.path : null;
+          const imageBase64 = imagePath
+            ? fs.readFileSync(imagePath, { encoding: "base64" })
+            : null;
+          //const relativeImagePath = 'uploads/' + imageName;
+          if (imagePath) {
+            console.log("Image saved at:", imagePath);
+          }
+
+          // Validate that incidentText is provided
+          // if (!incidentText) {
+          //   return res.status(400).json({ error: "Incident text is required." });
+          // }
+          // Validate that latitude and longitude are provided
+          if (!lat || !lng) {
+            return res.status(400).json({
+              error: "Latitude and longitude are required for geolocation.",
+            });
+          }
+          // Fetch the address using reverse geocoding
+          const streetAddress = await getReverseGeocoding(lat, lng);
+
+          const aiResult = await run(incidentText, imageBase64);
+
+          // Construct the new incident object
+          const newIncident = {
+            incidentText,
+            name,
+            phoneNumber,
+            streetAddress,
+            image: req.file.filename,
+            imagePath,
+            datetime: new Date(),
+            aiResult,
+            allocated,
+          };
+
+          const result = await database
+            .collection("Incident")
+            .insertOne(newIncident);
+
+          // Return the success response with the auto-generated _id
+          res.status(201).json({
+            message: "Incident created successfully",
+            incidentId: result.insertedId, // Return MongoDB's auto-generated _id
+            aiRecommendation: aiResult,
+            image: imagePath
+              ? `http://localhost:8067/uploads/${path.basename(imagePath)}`
+              : null,
           });
+        } catch (error) {
+          console.error("Error creating incident:", error);
+          res
+            .status(500)
+            .json({ error: "An error occurred while creating the incident." });
         }
-        // Fetch the address using reverse geocoding
-        const streetAddress = await getReverseGeocoding(lat, lng);
-
-        const aiResult = await run(incidentText, imageBase64);
-
-        // Construct the new incident object
-        const newIncident = {
-          incidentText,
-          name,
-          phoneNumber,
-          streetAddress,
-          image: req.file.filename,
-          imagePath, 
-          datetime: new Date(),
-          aiResult,
-          allocated
-        };
-
-        const result = await database.collection("Incident").insertOne(newIncident);
-
-        // Return the success response with the auto-generated _id
-        res.status(201).json({
-          message: "Incident created successfully",
-          incidentId: result.insertedId, // Return MongoDB's auto-generated _id
-          aiRecommendation: aiResult,
-          image: imagePath ? `http://localhost:8067/uploads/${path.basename(imagePath)}` : null
-        });
-      } catch (error) {
-        console.error("Error creating incident:", error);
-        res.status(500).json({ error: "An error occurred while creating the incident." });
       }
-    });
+    );
 
     // Serve static files from the "uploads" directory
-    app.use('/uploads', express.static(uploadDir));
+    app.use("/uploads", express.static(uploadDir));
     // Other routes
     app.post("/api/login", async (req, res) => {
       const body = req.body;
@@ -229,7 +240,7 @@ async function main() {
           .toArray();
         if (incident.length > 0) {
           await incidentCollection.updateMany(
-            { incidentID: String(newIncidentID) },
+            { _id: String(newIncidentID) },
             { $set: { allocated: true } }
           );
         }
