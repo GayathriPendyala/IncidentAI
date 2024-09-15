@@ -110,17 +110,18 @@ async function main() {
         }
 
         // If an image is uploaded, get the file path
-        const imageName = req.file.filename;
+        // const imageName = req.file.filename;
         const imagePath = req.file ? req.file.path : null;
+        const imageBase64 = imagePath ? fs.readFileSync(imagePath, { encoding: 'base64' }) : null;
         //const relativeImagePath = 'uploads/' + imageName;
         if (imagePath) {
           console.log("Image saved at:", imagePath);
         }
 
         // Validate that incidentText is provided
-        if (!incidentText) {
-          return res.status(400).json({ error: "Incident text is required." });
-        }
+        // if (!incidentText) {
+        //   return res.status(400).json({ error: "Incident text is required." });
+        // }
         // Validate that latitude and longitude are provided
         if (!lat || !lng) {
           return res.status(400).json({
@@ -130,7 +131,7 @@ async function main() {
         // Fetch the address using reverse geocoding
         const streetAddress = await getReverseGeocoding(lat, lng);
 
-        const aiResult = await run(incidentText);
+        const aiResult = await run(incidentText, imageBase64);
 
         // Construct the new incident object
         const newIncident = {
