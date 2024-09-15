@@ -44,6 +44,8 @@
 import express from "express";
 import cors from "cors";
 import { MongoClient, ServerApiVersion } from "mongodb";
+import { run } from "./gemini_api.js";
+
 
 // DB connection string
 const uri =
@@ -106,7 +108,7 @@ async function main() {
       }
     });
 
-    app.post("/api/creatingIncident", async (req, res) => {
+    app.post("/api/creatingIncident", async (req, res) => { 
       try {
         const { incidentText, name, phoneNumber, address } = req.body;
 
@@ -115,6 +117,8 @@ async function main() {
           return res.status(400).json({ error: "Incident text is required." });
         }
 
+        const aiResult = await run(incidentText);
+
         // Construct the new incident object
         const newIncident = {
           incidentText, // Mandatory field
@@ -122,6 +126,7 @@ async function main() {
           phoneNumber, // Optional
           address, // Optional
           datetime: new Date(), // Auto-generated current datetime
+          aiResult,
         };
 
         // Insert the new incident into the Incident collection
@@ -129,11 +134,14 @@ async function main() {
           .db("incidentAI")
           .collection("Incident")
           .insertOne(newIncident);
+        
+        
 
         // Return the success response with the auto-generated _id
         res.status(201).json({
           message: "Incident created successfully",
           incidentId: result.insertedId, // Return MongoDB's auto-generated _id
+          aiRecommendation: aiResult,
         });
       } catch (error) {
         console.error("Error creating incident:", error);
