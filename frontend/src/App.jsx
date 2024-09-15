@@ -4,7 +4,7 @@ import {
   useRedirectFunctions,
   useLogoutFunction,
 } from "@propelauth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Flex,
   Box,
@@ -57,6 +57,7 @@ const App = withAuthInfo((props) => {
 });
 
 function IncidentReportForm() {
+  const [submitted, setSubmitted] = useState(false);
   const incidentDetails = new FormData();
   const options = {
     enableHighAccuracy: true,
@@ -67,6 +68,8 @@ function IncidentReportForm() {
   function success(pos) {
     console.log("got location info");
     const crd = pos.coords;
+    incidentDetails.delete("lat");
+    incidentDetails.delete("lng");
 
     incidentDetails.append("lat", crd.latitude);
     incidentDetails.append("lng", crd.longitude);
@@ -80,7 +83,20 @@ function IncidentReportForm() {
   }
 
   navigator.geolocation.getCurrentPosition(success, error, options);
+  navigator.permissions
+    .query({
+      name: "geolocation",
+    })
+    .then((permission) => {
+      // is geolocation granted?
+      permission.state === "granted"
+        ? navigator.geolocation.getCurrentPosition((pos) => success(pos))
+        : resolve(null);
+    });
 
+  if (submitted) {
+    return <Flex>Thanks for reporting.</Flex>;
+  }
   return (
     <Flex
       direction="column"
@@ -142,7 +158,10 @@ function IncidentReportForm() {
           };
 
           fetch("http://localhost:8067/api/creatingIncident", requestOptions)
-            .then((response) => response.text())
+            .then((response) => {
+              response.text();
+              setSubmitted(true);
+            })
             .then((result) => console.log(result))
             .catch((error) => console.error(error));
         }}
