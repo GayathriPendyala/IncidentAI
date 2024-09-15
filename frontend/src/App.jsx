@@ -22,39 +22,29 @@ const App = withAuthInfo((props) => {
   const logoutFunction = useLogoutFunction();
   const { redirectToLoginPage, redirectToSignupPage } = useRedirectFunctions();
 
-  if (props.isLoggedIn) {
-    return (
-      <>
-        <header>
-          <nav>
-            <ul className="user-info">
-              <li>Welcome {props.user.email}</li>
-              <li>
-                <button onClick={() => logoutFunction(true)}>Logout</button>
-              </li>
-            </ul>
-          </nav>
-        </header>
-        <main>
-          <Dashboard />
-        </main>
-      </>
-    );
-  } else {
-    return (
-      <>
-        <header style={{ borderBottom: "2px solid #8E4EC6" }}>
-          <nav
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              flexDirection: "row",
-            }}
-          >
-            <h1 style={{ fontSize: "2rem" }}>
-              incident.<span style={{ color: "#8E4EC6" }}>ai</span>
-            </h1>
-            <ul className="user-info">
+  return (
+    <>
+      <header style={{ borderBottom: "2px solid #8E4EC6" }}>
+        <nav
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            flexDirection: "row",
+          }}
+        >
+          <h1 style={{ fontSize: "2rem" }}>
+            incident.<span style={{ color: "#8E4EC6" }}>ai</span>
+          </h1>
+          <ul className="user-info">
+            {props.isLoggedIn ? (
+              <Button
+                color="indigo"
+                variant="soft"
+                onClick={() => logoutFunction(true)}
+              >
+                Logout
+              </Button>
+            ) : (
               <Button
                 color="indigo"
                 variant="soft"
@@ -62,15 +52,19 @@ const App = withAuthInfo((props) => {
               >
                 Login
               </Button>
-            </ul>
-          </nav>
-        </header>
-        <main>
+            )}
+          </ul>
+        </nav>
+      </header>
+      <main>
+        {props.isLoggedIn ? (
+          <Dashboard />
+        ) : (
           <IncidentReportForm></IncidentReportForm>
-        </main>
-      </>
-    );
-  }
+        )}
+      </main>
+    </>
+  );
 });
 
 function IncidentReportForm() {
