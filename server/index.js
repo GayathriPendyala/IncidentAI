@@ -17,8 +17,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // DB connection string
-const uri =
-  "mongodb+srv://admin:f8jkTV44DGVj0C2j@cluster0.mep41.mongodb.net/volunteerDB?retryWrites=true&w=majority&appName=Cluster0";
+const uri = `mongodb+srv://admin:${process.env.MONGODB_ATLAS_KEY}@cluster0.mep41.mongodb.net/volunteerDB?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -35,7 +34,7 @@ const {
   // ...
 } = initAuth({
   authUrl: "https://8445988.propelauthtest.com",
-  apiKey: "",
+  apiKey: process.env.PROPEL_AUTH_API_KEY,
 });
 
 const app = express();
@@ -183,7 +182,7 @@ async function main() {
     );
 
     // Serve static files from the "uploads" directory
-    app.use("/uploads", requireUser, express.static(uploadDir));
+    app.use("/uploads", express.static(uploadDir));
     // Other routes
     app.post("/api/login", async (req, res) => {
       const body = req.body;
@@ -296,8 +295,6 @@ async function getLocation(email) {
     console.log("Error fetching details:", error);
   }
 }
-
-//getLocation("khavin@vt.edu");
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 

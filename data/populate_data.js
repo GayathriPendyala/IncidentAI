@@ -112,7 +112,7 @@ async function addVolunteers(db) {
   await db.collection("volunteer").drop();
   const collection = await db.collection("volunteer");
 
-  const n = 1100;
+  const n = 2100;
   const volunteers = [];
   for (let i = 10; i < n; i++) {
     let v = createVolunteer(i);

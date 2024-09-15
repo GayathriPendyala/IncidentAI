@@ -69,6 +69,8 @@ const App = withAuthInfo((props) => {
 
 function IncidentReportForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
   const incidentDetails = new FormData();
   const options = {
     enableHighAccuracy: true,
@@ -165,8 +167,10 @@ function IncidentReportForm() {
               <Button
                 color="indigo"
                 variant="soft"
+                disabled={loading}
                 onClick={() => {
                   console.log(incidentDetails);
+                  setLoading(true);
                   const requestOptions = {
                     method: "POST",
                     body: incidentDetails,
@@ -185,7 +189,7 @@ function IncidentReportForm() {
                     .catch((error) => console.error(error));
                 }}
               >
-                Submit
+                {loading ? "Submitting ... " : "Submit"}
               </Button>
             </>
           ) : (
